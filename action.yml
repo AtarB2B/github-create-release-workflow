@@ -10,21 +10,22 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Git checkout
+    
+    - name: Checkout
       uses: actions/checkout@v3
-      with:
-        ref: "main"
-
-    - name: git
+    
+    - name: Updating release branch
       run: |
-        git checkout -b "rc/${{ inputs.tag }}"
-        git push --set-upstream origin "rc/${{ inputs.tag }}"
-
-    - name: Send Message to Slack
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{job.status}}
-        username: "CREATE_RC|${{github.event.repository.name}}|rc/${{ inputs.tag }}"
-        author_name: ${{github.workflow}}
-        fields: repo,message,commit,author,action,eventName,ref,workflow,job,took,pullRequest
-      if: always()
+        git config user.name "GitHub Actions Bot"
+        git config user.email "devops@atarb2b.com"
+        git fetch --all
+        git checkout rc/${{ inputs.tag }}
+        git pull
+        git checkout -b release/${{ inputs.tag }}
+        git push --set-upstream origin release/${{ inputs.tag }}
+        gh release edit ${{ inputs.tag }} --prerelease=false
+      shell: bash
+    
+    - name: Delete RC Branch
+      run: git push origin --delete "rc/${{ inputs.tag }}"
+      shell: bash
